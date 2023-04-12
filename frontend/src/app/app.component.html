@@ -1,0 +1,32 @@
+<div *ngIf="!loggedIn">
+  <button (click)="join()">join</button>
+  <div>
+    <input type="text" name="name" id="name" placeholder="name" [(ngModel)]="name">
+    <select [(ngModel)]="server">
+      <option>{{ServerID.server1}}</option>
+      <option>{{ServerID.server2}}</option>
+      <option>{{ServerID.server3}}</option>
+    </select>
+  </div>
+</div>
+
+
+<div *ngIf="loggedIn">
+  <h1>Willkommen {{name}}</h1>
+  <div>
+    <div (click)="playCard(card)" *ngFor="let card of cards; index as i">card{{i}}: {{CardValues[card.cardValue]}}
+      , {{CardColors[card.cardColor]}}</div>
+  </div>
+
+  <h3 *ngIf="atout != undefined">Atout: {{CardValues[atout.cardValue]}}
+    , {{CardColors[atout.cardColor]}}</h3>
+  <h1>CardCount: {{cardCount}}</h1>
+
+  <div *ngIf="currCard != undefined">CurrCard: {{CardValues[currCard.cardValue]}}
+    , {{CardColors[currCard.cardColor]}}</div>
+</div>
+
+<div *ngIf="end">
+  <br>
+  <h1>Herzlichen Glückwunsch: {{winner}}</h1>
+</div>
