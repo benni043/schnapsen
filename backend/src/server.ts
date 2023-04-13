@@ -62,8 +62,6 @@ function getIndexOfCard(cards: Card[], card: Card): number {
 
 function checkIfPlayer1HasWon(cardPlayer1: Card, cardPlayer2: Card, server: ServerID): boolean {
     //TODO da geht iwas nicht ka
-    //TODO 20 / 40 ansagen
-    //sonst sollte alles gehen
 
     let actGame = game.get(server);
 
@@ -88,9 +86,16 @@ function checkIfPlayer1HasWon(cardPlayer1: Card, cardPlayer2: Card, server: Serv
 }
 
 socketIO.on('connection', (ws) => {
+    //TODO 20 / 40 ansagen
+
+    let name: string = "";
+    let server: ServerID = ServerID.server1;
 
     ws.on("newGame", (newGameData: NewGameData) => {
         if (!game.has(newGameData.serverToConnect)) {
+            name = newGameData.playerName;
+            server = newGameData.serverToConnect;
+
             game.set(newGameData.serverToConnect, {
                 player1: {
                     name: newGameData.playerName,
@@ -117,8 +122,17 @@ socketIO.on('connection', (ws) => {
                 availableCards: getAllCardCombinations(),
                 atout: undefined,
                 onePlayFinished: 0,
+                playerLeftCount: 0
             })
         } else {
+            if(game.get(newGameData.serverToConnect)!.state == State.gameRunning) {
+                ws.emit("gameStartedError");
+                return;
+            }
+
+            name = newGameData.playerName;
+            server = newGameData.serverToConnect;
+
             //set atout
             game.get(newGameData.serverToConnect)!.atout = getRandomCards(1, newGameData.serverToConnect)[0];
 
@@ -159,7 +173,7 @@ socketIO.on('connection', (ws) => {
         let actGame = game.get(setCardData.serverToConnect);
 
         if (actGame!.gameEnd) {
-            ws.emit("endAlert");
+            ws.emit("gameFinishedError");
             return;
         }
 
@@ -190,7 +204,7 @@ socketIO.on('connection', (ws) => {
                 actGame!.usedCards.push(setCardData.card)
             }
         } else {
-            ws.emit("alert");
+            ws.emit("playerNotOnMoveError");
         }
 
         if (actGame!.onePlayFinished == 2) {
@@ -200,14 +214,14 @@ socketIO.on('connection', (ws) => {
                 actGame!.player1.cardCount += values.get(actGame!.player1!.activeCard!.cardValue)!
                 actGame!.player1.cardCount += values.get(actGame!.player2!.activeCard!.cardValue)!;
 
-                actGame!.player1!.socketConnection!.emit("won", actGame!.player1.cardCount);
+                actGame!.player1!.socketConnection!.emit("playerMoveInformation", actGame!.player1.cardCount);
 
                 actGame!.isPlayer1OnMove = true;
             } else {
                 actGame!.player2!.cardCount += values.get(actGame!.player1!.activeCard!.cardValue)!;
                 actGame!.player2!.cardCount += values.get(actGame!.player2!.activeCard!.cardValue)!;
 
-                actGame!.player2!.socketConnection!.emit("won", actGame!.player2!.cardCount);
+                actGame!.player2!.socketConnection!.emit("playerMoveInformation", actGame!.player2!.cardCount);
 
                 actGame!.isPlayer1OnMove = false;
             }
@@ -262,24 +276,37 @@ socketIO.on('connection', (ws) => {
 
             if (actGame!.player1.cardCount >= 66) {
                 actGame!.gameEnd = true;
-                actGame!.player1!.socketConnection!.emit("end", actGame!.player1.name);
-                actGame!.player2!.socketConnection!.emit("end", actGame!.player1.name);
+                actGame!.player1!.socketConnection!.emit("gameEndInformation", actGame!.player1.name);
+                actGame!.player2!.socketConnection!.emit("gameEndInformation", actGame!.player1.name);
             } else if (actGame!.player2!.cardCount >= 66) {
                 actGame!.gameEnd = true;
-                actGame!.player1!.socketConnection!.emit("end", actGame!.player2!.name);
-                actGame!.player2!.socketConnection!.emit("end", actGame!.player2!.name);
+                actGame!.player1!.socketConnection!.emit("gameEndInformation", actGame!.player2!.name);
+                actGame!.player2!.socketConnection!.emit("gameEndInformation", actGame!.player2!.name);
             } else if (hasPlayer1Won && actGame!.usedCards.length == 20) {
                 actGame!.gameEnd = true;
-                actGame!.player1!.socketConnection!.emit("end", actGame!.player1.name);
-                actGame!.player2!.socketConnection!.emit("end", actGame!.player1.name);
+                actGame!.player1!.socketConnection!.emit("gameEndInformation", actGame!.player1.name);
+                actGame!.player2!.socketConnection!.emit("gameEndInformation", actGame!.player1.name);
             } else if (!hasPlayer1Won && actGame!.usedCards.length == 20) {
                 actGame!.gameEnd = true;
-                actGame!.player1!.socketConnection!.emit("end", actGame!.player2!.name);
-                actGame!.player2!.socketConnection!.emit("end", actGame!.player2!.name);
+                actGame!.player1!.socketConnection!.emit("gameEndInformation", actGame!.player2!.name);
+                actGame!.player2!.socketConnection!.emit("gameEndInformation", actGame!.player2!.name);
+            }
+        }
+    })
+
+    ws.on("disconnect", () => {
+        let actGame = game.get(server);
+
+        if (actGame != undefined) {
+            actGame!.playerLeftCount++;
+
+            if (actGame!.playerLeftCount == 2) {
+                game.delete(server);
             }
         }
     })
 });
+
 
 server.listen(port, () => {
     console.log(`server started on port ${port}`);

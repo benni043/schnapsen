@@ -9,6 +9,7 @@ export type Game = {
     isPlayer1Ready: boolean;
     isPlayer2Ready: boolean;
     gameEnd: boolean;
+    playerLeftCount: number;
     usedCards: Card[];
     availableCards: Card[];
     atout: Card | undefined;
@@ -44,4 +45,9 @@ export type SetCardData = {
     playerName: string;
     serverToConnect: ServerID;
     card: Card;
+}
+
+export type PlayerLeft = {
+    playerName: string;
+    serverToConnect: ServerID
 }

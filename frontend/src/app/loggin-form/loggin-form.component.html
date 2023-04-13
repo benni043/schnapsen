@@ -1,0 +1,10 @@
+<div>
+  <input type="text" name="name" id="name" placeholder="name" [(ngModel)]="name">
+  <select [(ngModel)]="server">
+    <option>{{ServerID.server1}}</option>
+    <option>{{ServerID.server2}}</option>
+    <option>{{ServerID.server3}}</option>
+  </select>
+
+  <button (click)="join()">join</button>
+</div>

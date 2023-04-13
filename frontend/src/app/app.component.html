@@ -1,32 +1,22 @@
-<div *ngIf="!loggedIn">
-  <button (click)="join()">join</button>
-  <div>
-    <input type="text" name="name" id="name" placeholder="name" [(ngModel)]="name">
-    <select [(ngModel)]="server">
-      <option>{{ServerID.server1}}</option>
-      <option>{{ServerID.server2}}</option>
-      <option>{{ServerID.server3}}</option>
-    </select>
-  </div>
-</div>
+<app-loggin-form *ngIf="!service.loggedIn"></app-loggin-form>
 
+<div *ngIf="service.loggedIn">
 
-<div *ngIf="loggedIn">
-  <h1>Willkommen {{name}}</h1>
-  <div>
-    <div (click)="playCard(card)" *ngFor="let card of cards; index as i">card{{i}}: {{CardValues[card.cardValue]}}
-      , {{CardColors[card.cardColor]}}</div>
+  <div *ngFor="let card of service.cards; index as i">
+    <app-card [card]="card" [cardNum]="i"></app-card>
   </div>
 
-  <h3 *ngIf="atout != undefined">Atout: {{CardValues[atout.cardValue]}}
-    , {{CardColors[atout.cardColor]}}</h3>
-  <h1>CardCount: {{cardCount}}</h1>
+    <div (click)="service.makeMove(card)" *ngFor="let card of service.cards; index as i">card{{i}}
+      : {{CardValues[card.cardValue]}}
+      , {{CardColors[card.cardColor]}}
+    </div>
 
-  <div *ngIf="currCard != undefined">CurrCard: {{CardValues[currCard.cardValue]}}
-    , {{CardColors[currCard.cardColor]}}</div>
+  <h3 *ngIf="service.atout != undefined">Atout: {{CardValues[service.atout.cardValue]}}
+    , {{CardColors[service.atout.cardColor]}}</h3>
+  <h1>CardCount: {{service.cardCount}}</h1>
+
+  <div *ngIf="service.currCard != undefined">CurrCard: {{CardValues[service.currCard.cardValue]}}
+    , {{CardColors[service.currCard.cardColor]}}</div>
 </div>
 
-<div *ngIf="end">
-  <br>
-  <h1>Herzlichen Glückwunsch: {{winner}}</h1>
-</div>
+<app-end-screen *ngIf="service.end"></app-end-screen>
