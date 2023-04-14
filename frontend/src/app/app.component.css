@@ -1,0 +1,30 @@
+.handCards {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+
+  margin-top: 30px;
+}
+
+.handCard, .opponentHand {
+  margin: 10px;
+}
+
+.handCard:hover {
+  transform: scale(103%);
+  transition: 0.45s;
+}
+
+#middle {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+#atout {
+  margin-left: 30px;
+}
+
+#game {
+  padding: 15px;
+}

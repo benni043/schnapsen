@@ -4,21 +4,25 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { FormsModule } from '@angular/forms';
-import { CardComponent } from './card/card.component';
 import { LogginFormComponent } from './loggin-form/loggin-form.component';
 import { EndScreenComponent } from './end-screen/end-screen.component';
+import { NewCardComponent } from './new-card/new-card.component';
+import {NgOptimizedImage} from "@angular/common";
+import { WaitlistComponent } from './waitlist/waitlist.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    CardComponent,
     LogginFormComponent,
-    EndScreenComponent
+    EndScreenComponent,
+    NewCardComponent,
+    WaitlistComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    FormsModule
+    FormsModule,
+    NgOptimizedImage
   ],
   providers: [],
   bootstrap: [AppComponent]

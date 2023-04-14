@@ -23,7 +23,6 @@ export class SettingsService {
 
     this.socket.on("newCard", (card: Card) => {
       this.cards.push(card);
-      this.currCard = undefined;
     })
 
     this.socket.on("setCardSuccess", (card: Card) => {
@@ -40,22 +39,27 @@ export class SettingsService {
       this.cardCount = cardCount;
     })
 
-    this.socket.on("gameStartedError", () => {
-      alert("Dieser Server ist bereits in Benützung!")
-    })
-
-    this.socket.on("playerNotOnMoveError", () => {
-      alert("Du bist nicht an der Reihe!");
-    })
-
-    this.socket.on("gameFinishedError", () => {
-      alert("Das Spiel ist bereits beendet!");
+    this.socket.on("alert", (message: string) => {
+      alert(message)
     })
 
     this.socket.on("gameEndInformation", (winner: string) => {
       this.end = true;
       this.winner = winner;
     })
+
+    this.socket.on("joinSucceed", () => {
+      this.loggedIn = true;
+    })
+
+    this.socket.on("started", () => {
+      this.started = true;
+    })
+
+    this.socket.on("clearCurrCard", () => {
+      this.currCard = undefined;
+    })
+
   }
 
   cards: Card[] = []
@@ -71,14 +75,13 @@ export class SettingsService {
   socket: Socket | undefined;
 
   loggedIn: boolean = false;
+  started: boolean = false;
 
   join() {
     this.socket!.emit("newGame", {
       playerName: this.name,
       serverToConnect: this.server
     } as NewGameData);
-
-    this.loggedIn = true;
   }
 
   makeMove(card: Card): void {

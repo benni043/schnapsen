@@ -46,8 +46,3 @@ export type SetCardData = {
     serverToConnect: ServerID;
     card: Card;
 }
-
-export type PlayerLeft = {
-    playerName: string;
-    serverToConnect: ServerID
-}

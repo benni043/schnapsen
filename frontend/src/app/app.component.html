@@ -1,22 +1,31 @@
-<app-loggin-form *ngIf="!service.loggedIn"></app-loggin-form>
+<div>
+  <app-loggin-form *ngIf="!service.loggedIn"></app-loggin-form>
 
-<div *ngIf="service.loggedIn">
-
-  <div *ngFor="let card of service.cards; index as i">
-    <app-card [card]="card" [cardNum]="i"></app-card>
+  <div *ngIf="service.loggedIn && !service.started">
+    <app-waitlist></app-waitlist>
   </div>
 
-    <div (click)="service.makeMove(card)" *ngFor="let card of service.cards; index as i">card{{i}}
-      : {{CardValues[card.cardValue]}}
-      , {{CardColors[card.cardColor]}}
+  <div id="game" *ngIf="service.started">
+    <div>
+      <h1>{{service.name}}</h1>
     </div>
 
-  <h3 *ngIf="service.atout != undefined">Atout: {{CardValues[service.atout.cardValue]}}
-    , {{CardColors[service.atout.cardColor]}}</h3>
-  <h1>CardCount: {{service.cardCount}}</h1>
+    <div id="middle">
+      <div>
+        <app-new-card *ngIf="service.currCard == undefined" id="placeHolder"></app-new-card>
+        <app-new-card *ngIf="service.currCard != undefined" [colorC]="service.currCard.cardColor" [valueC]="service.currCard.cardValue"></app-new-card>
+      </div>
+      <app-new-card id="atout" *ngIf="service.atout != undefined" [colorC]="service.atout.cardColor" [valueC]="service.atout.cardValue"></app-new-card>
+    </div>
 
-  <div *ngIf="service.currCard != undefined">CurrCard: {{CardValues[service.currCard.cardValue]}}
-    , {{CardColors[service.currCard.cardColor]}}</div>
+    <div class="handCards">
+      <div *ngFor="let card of service.cards; index as i" class="handCard">
+        <app-new-card (click)="service.makeMove(card)" [colorC]="card.cardColor" [valueC]="card.cardValue"></app-new-card>
+      </div>
+    </div>
+
+    <h2>CardCount: {{service.cardCount}}</h2>
+  </div>
+
+  <app-end-screen *ngIf="service.end"></app-end-screen>
 </div>
-
-<app-end-screen *ngIf="service.end"></app-end-screen>
