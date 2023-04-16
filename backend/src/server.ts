@@ -125,8 +125,6 @@ function getAnsage(cards: Card[], atout: Card): Ansagen {
 }
 
 socketIO.on('connection', (ws) => {
-    //TODO 20 / 40 ansagen
-
     let name: string = "";
     let server: ServerID = ServerID.server1;
 
@@ -174,14 +172,16 @@ socketIO.on('connection', (ws) => {
         } else {
             if (game.get(newGameData.serverToConnect)!.player1.name == newGameData.playerName && game.get(newGameData.serverToConnect)!.state == State.gameRunning && !game.get(newGameData.serverToConnect)!.player1.isOnline && !game.get(newGameData.serverToConnect)!.isPlayer1Ready) {
                 game.get(newGameData.serverToConnect)!.player1!.isOnline = true;
-                game.get(newGameData.serverToConnect)!.isPlayer1Ready = true;
+
                 game.get(newGameData.serverToConnect)!.player1!.socketConnection = ws;
+                game.get(newGameData.serverToConnect)!.isPlayer1Ready = true;
                 game.get(newGameData.serverToConnect)!.playerLeftCount--;
 
                 game.get(newGameData.serverToConnect)!.player1!.socketConnection!.emit("postCards", game.get(newGameData.serverToConnect)!.player1!.handCards as Card[]);
                 game.get(newGameData.serverToConnect)!.player1!.socketConnection!.emit("postAtout", game.get(newGameData.serverToConnect)!.atout);
                 game.get(newGameData.serverToConnect)!.player1!.socketConnection!.emit("playerMoveInformation", game.get(newGameData.serverToConnect)!.player1.cardCount);
                 game.get(newGameData.serverToConnect)!.player1!.socketConnection!.emit("started");
+                game.get(newGameData.serverToConnect)!.player1!.socketConnection!.emit("setCardSuccess", game.get(newGameData.serverToConnect)!.player1.activeCard);
 
                 if (getAnsage(game.get(newGameData.serverToConnect)!.player1.handCards, game.get(newGameData.serverToConnect)!.atout!) == Ansagen.ansagen20) {
                     game.get(newGameData.serverToConnect)!.player1.say20 = true;
@@ -189,6 +189,10 @@ socketIO.on('connection', (ws) => {
                 } else if (getAnsage(game.get(newGameData.serverToConnect)!.player1.handCards, game.get(newGameData.serverToConnect)!.atout!) == Ansagen.ansagen40) {
                     game.get(newGameData.serverToConnect)!.player1.say40 = true;
                     game.get(newGameData.serverToConnect)!.player1.socketConnection!.emit("say", 40);
+                } else {
+                    game.get(newGameData.serverToConnect)!.player1.say20 = false;
+                    game.get(newGameData.serverToConnect)!.player1.say40 = false;
+                    game.get(newGameData.serverToConnect)!.player1.socketConnection!.emit("clearSay");
                 }
 
                 ws.emit("joinSucceed");
@@ -204,6 +208,7 @@ socketIO.on('connection', (ws) => {
                 game.get(newGameData.serverToConnect)!.player2!.socketConnection!.emit("postAtout", game.get(newGameData.serverToConnect)!.atout);
                 game.get(newGameData.serverToConnect)!.player2!.socketConnection!.emit("playerMoveInformation", game.get(newGameData.serverToConnect)!.player2!.cardCount);
                 game.get(newGameData.serverToConnect)!.player2!.socketConnection!.emit("started");
+                game.get(newGameData.serverToConnect)!.player2!.socketConnection!.emit("setCardSuccess", game.get(newGameData.serverToConnect)!.player2!.activeCard);
 
                 if (getAnsage(game.get(newGameData.serverToConnect)!.player2!.handCards, game.get(newGameData.serverToConnect)!.atout!) == Ansagen.ansagen20) {
                     game.get(newGameData.serverToConnect)!.player2!.say20 = true;
@@ -211,6 +216,10 @@ socketIO.on('connection', (ws) => {
                 } else if (getAnsage(game.get(newGameData.serverToConnect)!.player2!.handCards, game.get(newGameData.serverToConnect)!.atout!) == Ansagen.ansagen40) {
                     game.get(newGameData.serverToConnect)!.player2!.say40 = true;
                     game.get(newGameData.serverToConnect)!.player2!.socketConnection!.emit("say", 40);
+                } else {
+                    game.get(newGameData.serverToConnect)!.player2!.say20 = false;
+                    game.get(newGameData.serverToConnect)!.player2!.say40 = false;
+                    game.get(newGameData.serverToConnect)!.player2!.socketConnection!.emit("clearSay");
                 }
 
                 ws.emit("joinSucceed");
@@ -264,6 +273,10 @@ socketIO.on('connection', (ws) => {
             } else if (getAnsage(game.get(newGameData.serverToConnect)!.player1.handCards, game.get(newGameData.serverToConnect)!.atout!) == Ansagen.ansagen40) {
                 game.get(newGameData.serverToConnect)!.player1.say40 = true;
                 game.get(newGameData.serverToConnect)!.player1.socketConnection!.emit("say", 40);
+            } else {
+                game.get(newGameData.serverToConnect)!.player1.say20 = false;
+                game.get(newGameData.serverToConnect)!.player1.say40 = false;
+                game.get(newGameData.serverToConnect)!.player1.socketConnection!.emit("clearSay");
             }
 
             if (getAnsage(game.get(newGameData.serverToConnect)!.player2!.handCards, game.get(newGameData.serverToConnect)!.atout!) == Ansagen.ansagen20) {
@@ -272,6 +285,10 @@ socketIO.on('connection', (ws) => {
             } else if (getAnsage(game.get(newGameData.serverToConnect)!.player2!.handCards, game.get(newGameData.serverToConnect)!.atout!) == Ansagen.ansagen40) {
                 game.get(newGameData.serverToConnect)!.player2!.say40 = true;
                 game.get(newGameData.serverToConnect)!.player2!.socketConnection!.emit("say", 40);
+            } else {
+                game.get(newGameData.serverToConnect)!.player2!.say20 = false;
+                game.get(newGameData.serverToConnect)!.player2!.say40 = false;
+                game.get(newGameData.serverToConnect)!.player2!.socketConnection!.emit("clearSay");
             }
 
             //send handCards to each playing player
@@ -354,7 +371,7 @@ socketIO.on('connection', (ws) => {
                 actGame!.isPlayer1OnMove = false;
             }
 
-            actGame!.player1!.socketConnection!.emit("clearCurrCard")
+            actGame!.player1!.socketConnection!.emit("clearCurrCard");
             actGame!.player2!.socketConnection!.emit("clearCurrCard");
 
             actGame!.player1!.activeCard = undefined;
@@ -409,6 +426,10 @@ socketIO.on('connection', (ws) => {
             } else if (getAnsage(game.get(setCardData.serverToConnect)!.player1.handCards, game.get(setCardData.serverToConnect)!.atout!) == Ansagen.ansagen40) {
                 game.get(setCardData.serverToConnect)!.player1.say40 = true;
                 game.get(setCardData.serverToConnect)!.player1.socketConnection!.emit("say", 40);
+            } else {
+                game.get(setCardData.serverToConnect)!.player1.say20 = false;
+                game.get(setCardData.serverToConnect)!.player1.say40 = false;
+                game.get(setCardData.serverToConnect)!.player1.socketConnection!.emit("clearSay");
             }
 
             if (getAnsage(game.get(setCardData.serverToConnect)!.player2!.handCards, game.get(setCardData.serverToConnect)!.atout!) == Ansagen.ansagen20) {
@@ -417,6 +438,10 @@ socketIO.on('connection', (ws) => {
             } else if (getAnsage(game.get(setCardData.serverToConnect)!.player2!.handCards, game.get(setCardData.serverToConnect)!.atout!) == Ansagen.ansagen40) {
                 game.get(setCardData.serverToConnect)!.player2!.say40 = true;
                 game.get(setCardData.serverToConnect)!.player2!.socketConnection!.emit("say", 40);
+            } else {
+                game.get(setCardData.serverToConnect)!.player2!.say20 = false;
+                game.get(setCardData.serverToConnect)!.player2!.say40 = false;
+                game.get(setCardData.serverToConnect)!.player2!.socketConnection!.emit("clearSay");
             }
 
             actGame!.onePlayFinished = 0;
@@ -444,82 +469,59 @@ socketIO.on('connection', (ws) => {
     ws.on("disconnect", () => {
         let actGame = game.get(server);
 
-        if (actGame != undefined) {
-            actGame!.playerLeftCount++;
+        if (actGame) {
+            actGame.playerLeftCount++;
 
-            if (name == actGame!.player1.name) {
-                actGame!.player1.isOnline = false;
-                actGame!.isPlayer1Ready = false;
-            } else if (name == actGame!.player2!.name) {
-                actGame!.player2!.isOnline = false;
-                actGame!.isPlayer2Ready = false;
+            if (name == actGame.player1.name) {
+                actGame.player1.isOnline = false;
+                actGame.isPlayer1Ready = false;
+            } else if (name == actGame.player2!.name) {
+                actGame.player2!.isOnline = false;
+                actGame.isPlayer2Ready = false;
             }
 
-            if (actGame!.state == State.joining) {
-                game.delete(server)
-            }
-            if (actGame!.playerLeftCount == 2) {
+            if (actGame.state == State.joining || actGame.playerLeftCount == 2) {
                 game.delete(server);
             }
         }
+        console.log(0)
     })
 
-    ws.on("sendSay", (data: {
-        playerName: string;
-        serverToConnect: ServerID;
-        value: number
-    }) => {
+    ws.on("sendSay", (data) => {
         let actGame = game.get(data.serverToConnect);
 
-        if (actGame!.player1.say20 && actGame!.player1.name == data.playerName && actGame!.isPlayer1OnMove) {
-            if (actGame!.hasPlayer1StartedPlayRound == undefined) {
-                actGame!.player1.cardCount += 20;
-                actGame!.player1!.socketConnection!.emit("playerMoveInformation", actGame!.player1!.cardCount);
-                actGame!.player1.say20 = false;
-                actGame!.player1.say40 = false;
-                ws.emit("clearSay")
-            } else {
-                ws.emit("alert", "Du kannst gerade nichts ansagen, da dein Gegner den Spielzug gestartet hat!");
-                return
-            }
-        } else if (actGame!.player1.say40 && actGame!.player1.name == data.playerName && actGame!.isPlayer1OnMove) {
-            if (actGame!.hasPlayer1StartedPlayRound == undefined) {
-                actGame!.player1.cardCount += 40;
-                actGame!.player1!.socketConnection!.emit("playerMoveInformation", actGame!.player1!.cardCount);
-                actGame!.player1.say20 = false;
-                actGame!.player1.say40 = false;
-                ws.emit("clearSay")
-            } else {
-                ws.emit("alert", "Du kannst gerade nichts ansagen, da dein Gegner den Spielzug gestartet hat!");
-                return
-            }
-        } else if (actGame!.player2!.say20 && actGame!.player2!.name == data.playerName && !actGame!.isPlayer1OnMove) {
-            if (!actGame!.hasPlayer1StartedPlayRound == undefined) {
-                actGame!.player2!.cardCount += 20;
-                actGame!.player2!.socketConnection!.emit("playerMoveInformation", actGame!.player2!.cardCount);
-                actGame!.player2!.say20 = false;
-                actGame!.player2!.say40 = false;
-                ws.emit("clearSay")
-            } else {
-                ws.emit("alert", "Du kannst gerade nichts ansagen, da dein Gegner den Spielzug gestartet hat!");
-                return
-            }
-        } else if (actGame!.player2!.say40 && actGame!.player2!.name == data.playerName && !actGame!.isPlayer1OnMove) {
-            if (!actGame!.hasPlayer1StartedPlayRound == undefined) {
-                actGame!.player2!.cardCount += 40;
-                actGame!.player2!.socketConnection!.emit("playerMoveInformation", actGame!.player2!.cardCount);
-                actGame!.player2!.say20 = false;
-                actGame!.player2!.say40 = false;
-                ws.emit("clearSay")
-            } else {
-                ws.emit("alert", "Du kannst gerade nichts ansagen, da dein Gegner den Spielzug gestartet hat!");
-                return
-            }
-        } else {
-            ws.emit("alert", "Du bist nicht am Zug!");
+        if (actGame!.gameEnd) {
+            ws.emit("alert", "Das Spiel ist bereits beendet!");
+            return;
         }
 
-    })
+        let player = actGame!.isPlayer1OnMove ? actGame!.player1 : actGame!.player2!;
+        let opponent = actGame!.isPlayer1OnMove ? actGame!.player2 : actGame!.player1;
+
+        if (player.name !== data.playerName) {
+            ws.emit("alert", "Du bist nicht am Zug!");
+            return;
+        }
+
+        if (actGame!.hasPlayer1StartedPlayRound !== undefined) {
+            ws.emit("alert", "Du kannst gerade nichts ansagen, da dein Gegner den Spielzug gestartet hat!");
+            return;
+        }
+
+        if (player.say20) {
+            player.cardCount += 20;
+            player.socketConnection!.emit("playerMoveInformation", player.cardCount);
+            player.say20 = false;
+            player.say40 = false;
+            ws.emit("clearSay");
+        } else if (player.say40) {
+            player.cardCount += 40;
+            player.socketConnection!.emit("playerMoveInformation", player.cardCount);
+            player.say20 = false;
+            player.say40 = false;
+            ws.emit("clearSay");
+        }
+    });
 });
 
 
