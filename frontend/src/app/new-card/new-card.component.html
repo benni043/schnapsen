@@ -1,0 +1,19 @@
+<div class="image-container">
+  <div *ngIf="!backwards">
+    <div class="left">
+      <div class="center">
+        <div class="value">{{value}}</div>
+        <img src="{{path}}" alt="STAPEL" class="small">
+      </div>
+    </div>
+
+    <div class="middle"><img src="{{path}}" alt="STAPEL" class="large"></div>
+
+    <div class="right">
+      <div class="center">
+        <img id="rightImg" src="{{path}}" alt="STAPEL" class="small">
+        <div id="rightVal" class="value">{{value}}</div>
+      </div>
+    </div>
+  </div>
+</div>

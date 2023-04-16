@@ -24,6 +24,8 @@
       </div>
     </div>
 
+    <button *ngIf="service.say20" (click)="service.send20()">say20</button>
+    <button *ngIf="service.say40" (click)="service.send40()">say40</button>
     <h2>CardCount: {{service.cardCount}}</h2>
   </div>
 

@@ -60,6 +60,18 @@ export class SettingsService {
       this.currCard = undefined;
     })
 
+    this.socket.on("say", (value: number) => {
+      if(value == 20) {
+        this.say20 = true;
+      } else if (value == 40) {
+        this.say40 = true;
+      }
+    })
+
+    this.socket.on("clearSay", () => {
+      this.say20 = false;
+      this.say40 = false;
+    })
   }
 
   cards: Card[] = []
@@ -77,6 +89,9 @@ export class SettingsService {
   loggedIn: boolean = false;
   started: boolean = false;
 
+  say20: boolean = false;
+  say40: boolean = false;
+
   join() {
     this.socket!.emit("newGame", {
       playerName: this.name,
@@ -92,4 +107,21 @@ export class SettingsService {
     } as SetCardData);
   }
 
+  send20() {
+    this.socket?.emit("sendSay",
+      {
+        playerName: this.name,
+        serverToConnect: this.server,
+        value: 20
+      });
+  }
+
+  send40() {
+    this.socket?.emit("sendSay",
+      {
+        playerName: this.name,
+        serverToConnect: this.server,
+        value: 40
+      });
+  }
 }

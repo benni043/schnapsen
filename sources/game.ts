@@ -14,6 +14,7 @@ export type Game = {
     availableCards: Card[];
     atout: Card | undefined;
     onePlayFinished: number;
+    hasPlayer1StartedPlayRound: boolean | undefined;
 }
 
 export type Player = {
@@ -23,6 +24,8 @@ export type Player = {
     socketConnection: Socket | undefined;
     cardCount: number;
     activeCard: Card | undefined;
+    say20: boolean;
+    say40: boolean;
 }
 
 export enum State {
@@ -45,4 +48,10 @@ export type SetCardData = {
     playerName: string;
     serverToConnect: ServerID;
     card: Card;
+}
+
+export enum Ansagen {
+    ansagen20,
+    ansagen40,
+    normal
 }

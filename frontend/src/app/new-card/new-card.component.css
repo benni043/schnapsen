@@ -1,0 +1,61 @@
+* {
+}
+
+.image-container {
+  height: 260px;
+  width: 180px;
+  border: 1px solid black;
+  border-radius: 8px;
+  padding: 5px;
+  background-color: white!important;
+}
+
+.small {
+  height: 50px;
+  width: 50px;
+  border-radius: 5px;
+}
+
+.large {
+  height: 100px;
+  width: 100px;
+  border-radius: 10px;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  justify-content: left;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  justify-content: right;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.middle {
+  display: flex;
+  justify-content: center;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  width: min-content;
+}
+
+.value {
+  font-family: "Bicycle", serif;
+  font-size: 22px;
+}
+
+#rightImg, #rightVal {
+  transform: rotate(180deg);
+}
