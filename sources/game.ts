@@ -15,6 +15,7 @@ export type Game = {
     atout: Card | undefined;
     onePlayFinished: number;
     hasPlayer1StartedPlayRound: boolean | undefined;
+    covered: boolean;
 }
 
 export type Player = {
@@ -26,6 +27,7 @@ export type Player = {
     activeCard: Card | undefined;
     say20: boolean;
     say40: boolean;
+    wonCount: number;
 }
 
 export enum State {

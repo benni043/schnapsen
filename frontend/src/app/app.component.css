@@ -28,3 +28,7 @@
 #game {
   padding: 15px;
 }
+
+.covered {
+  transform: rotate(180deg);
+}

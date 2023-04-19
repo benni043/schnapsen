@@ -19,6 +19,8 @@ export class SettingsService {
 
     this.socket.on("postAtout", (atout: Card) => {
       this.atout = atout;
+
+      //TODO nach rejoin bekommt man atout nicht angezeigt
     })
 
     this.socket.on("newCard", (card: Card) => {
@@ -35,7 +37,7 @@ export class SettingsService {
       }
     })
 
-    this.socket.on("playerMoveInformation", (cardCount: number) => {
+    this.socket.on("setCardCount", (cardCount: number) => {
       this.cardCount = cardCount;
     })
 
@@ -72,6 +74,10 @@ export class SettingsService {
       this.say20 = false;
       this.say40 = false;
     })
+
+    this.socket.on("getCover", () => {
+      this.covered = true;
+    })
   }
 
   cards: Card[] = []
@@ -91,6 +97,8 @@ export class SettingsService {
 
   say20: boolean = false;
   say40: boolean = false;
+
+  covered: boolean = false;
 
   join() {
     this.socket!.emit("newGame", {
@@ -123,5 +131,9 @@ export class SettingsService {
         serverToConnect: this.server,
         value: 40
       });
+  }
+
+  cover() {
+    this.socket?.emit("sendCover", {playerName: this.name, serverToConnect: this.server} as NewGameData);
   }
 }
