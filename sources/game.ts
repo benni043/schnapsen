@@ -6,8 +6,6 @@ export type Game = {
     player2: Player | undefined;
     isPlayer1OnMove: boolean;
     state: State;
-    isPlayer1Ready: boolean;
-    isPlayer2Ready: boolean;
     gameEnd: boolean;
     playerLeftCount: number;
     usedCards: Card[];
@@ -56,4 +54,9 @@ export enum Ansagen {
     ansagen20,
     ansagen40,
     normal
+}
+
+export enum PlayerEnum {
+    player1,
+    player2
 }

@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, DoCheck, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 import {CardColors, CardValues} from "../../../../sources/cardEnum";
 
 @Component({
@@ -6,7 +6,7 @@ import {CardColors, CardValues} from "../../../../sources/cardEnum";
   templateUrl: './new-card.component.html',
   styleUrls: ['./new-card.component.css']
 })
-export class NewCardComponent implements OnInit{
+export class NewCardComponent implements OnInit {
 
   @Input() colorC: CardColors | undefined;
   @Input() valueC: CardValues | undefined;

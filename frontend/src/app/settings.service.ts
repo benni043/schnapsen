@@ -12,15 +12,14 @@ export class SettingsService {
     this.socket = connect("http://localhost:3000/");
 
     this.socket.on("postCards", (cards: Card[]) => {
+      this.cards = []
       for (let card of cards) {
         this.cards.push(card);
       }
     })
 
     this.socket.on("postAtout", (atout: Card) => {
-      this.atout = atout;
-
-      //TODO nach rejoin bekommt man atout nicht angezeigt
+      this.atout = atout
     })
 
     this.socket.on("newCard", (card: Card) => {
@@ -78,6 +77,36 @@ export class SettingsService {
     this.socket.on("getCover", () => {
       this.covered = true;
     })
+
+    this.socket.on("opponent", (opponent: string) => {
+      this.opponent = opponent;
+    })
+
+    this.socket.on("said", (count: number) => {
+      alert("Der Gegner hat " + count + " angesagt!")
+    })
+
+    this.socket.on("swappedAtout", (atout: Card) => {
+      alert("Atout wird ausgetauscht!")
+      this.atout = undefined;
+
+      setTimeout(() => {
+        this.atout = {cardValue: atout.cardValue, cardColor: atout.cardColor} as Card;
+        this.changeAtout = false;
+      }, 10)
+    })
+
+    this.socket.on("setCurrCard", (card: Card) => {
+      this.currCard = undefined;
+
+      setTimeout(() => {
+        this.currCard = {cardValue: card.cardValue, cardColor: card.cardColor} as Card;
+      }, 10)
+    })
+
+    this.socket.on("swapAtoutAble", () => {
+      this.changeAtout = true;
+    })
   }
 
   cards: Card[] = []
@@ -99,6 +128,10 @@ export class SettingsService {
   say40: boolean = false;
 
   covered: boolean = false;
+
+  opponent: string = "";
+
+  changeAtout: boolean = false;
 
   join() {
     this.socket!.emit("newGame", {
@@ -135,5 +168,9 @@ export class SettingsService {
 
   cover() {
     this.socket?.emit("sendCover", {playerName: this.name, serverToConnect: this.server} as NewGameData);
+  }
+
+  austauschen() {
+    this.socket?.emit("swap", {playerName: this.name, serverToConnect: this.server} as NewGameData)
   }
 }

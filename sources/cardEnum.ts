@@ -17,3 +17,4 @@ export type Card = {
     cardColor: CardColors;
     cardValue: CardValues;
 }
+

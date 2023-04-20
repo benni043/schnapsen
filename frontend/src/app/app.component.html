@@ -3,7 +3,7 @@
   <app-waitlist *ngIf="service.loggedIn && !service.started"></app-waitlist>
 
   <div id="game" *ngIf="service.started">
-    <h1>{{service.name}}</h1>
+    <h1>Dein Gegner: {{service.opponent}}</h1>
 
     <div id="middle">
       <div>
@@ -25,6 +25,7 @@
 
     <button *ngIf="service.say20" (click)="service.send20()">say20</button>
     <button *ngIf="service.say40" (click)="service.send40()">say40</button>
+    <button *ngIf="service.changeAtout" (click)="service.austauschen()">swap atout</button>
     <h2>CardCount: {{service.cardCount}}</h2>
   </div>
   <app-end-screen *ngIf="service.end"></app-end-screen>
