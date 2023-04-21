@@ -26,6 +26,8 @@ export type Player = {
     say20: boolean;
     say40: boolean;
     wonCount: number;
+    saidCards: Card[];
+    said: boolean;
 }
 
 export enum State {

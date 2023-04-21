@@ -61,6 +61,14 @@ function getIndexOfCard(cards: Card[], card: Card): number {
 }
 
 function getWinner3(player1Card: Card, player2Card: Card, trumpSuit: CardColors, hasPlayer1Started: boolean): PlayerEnum {
+    const cardValue = {
+        [CardValues.Ace]: 11,
+        [CardValues.King]: 5,
+        [CardValues.Queen]: 3,
+        [CardValues.Jack]: 2,
+        [CardValues.Ten]: 10
+    };
+
     const isTrump = (card: Card) => card.cardColor === trumpSuit;
 
     const player1CardIsTrump = isTrump(player1Card);
@@ -71,40 +79,66 @@ function getWinner3(player1Card: Card, player2Card: Card, trumpSuit: CardColors,
     } else if (!player1CardIsTrump && player2CardIsTrump) {
         return PlayerEnum.player2;
     } else if (player1CardIsTrump && player2CardIsTrump) {
-        return values.get(player1Card.cardValue)! > values.get(player2Card.cardValue)! ? PlayerEnum.player1 : PlayerEnum.player2;
+        return cardValue[player1Card.cardValue] > cardValue[player2Card.cardValue] ? PlayerEnum.player1 : PlayerEnum.player2;
     } else {
         if (player1Card.cardColor === player2Card.cardColor) {
-            return hasPlayer1Started ? (values.get(player1Card.cardValue)! > values.get(player2Card.cardValue)! ? PlayerEnum.player1 : PlayerEnum.player2)
-                : (values.get(player2Card.cardValue)! > values.get(player1Card.cardValue)! ? PlayerEnum.player2 : PlayerEnum.player1);
+            return cardValue[player1Card.cardValue] > cardValue[player2Card.cardValue] ? PlayerEnum.player1 : PlayerEnum.player2;
         } else {
             return hasPlayer1Started ? PlayerEnum.player1 : PlayerEnum.player2;
         }
     }
 }
 
-function getAnsage(cards: Card[], atout: Card, actGame: Game): Ansagen {
+function getAnsage(cards: Card[], atout: Card, actGame: Game): { ansagen: Ansagen, cards: Card[] } {
     const colors = [CardColors.club, CardColors.spade, CardColors.heart, CardColors.diamond];
     let hasKingAndQueenOfAtout = false;
+    let king;
+    let queen;
 
     for (const color of colors) {
         const hasKing = cards.some(card => card.cardColor === color && card.cardValue === CardValues.King);
+        king = cards.filter(card => card.cardColor === color && card.cardValue === CardValues.King)[0];
         const hasQueen = cards.some(card => card.cardColor === color && card.cardValue === CardValues.Queen);
+        queen = cards.filter(card => card.cardColor === color && card.cardValue === CardValues.Queen)[0];
 
         if (hasKing && hasQueen) {
             if (color === atout.cardColor && cards.some(card => card.cardColor === atout.cardColor && card.cardValue === CardValues.King)) {
                 hasKingAndQueenOfAtout = cards.some(card => card.cardColor === atout.cardColor && card.cardValue === CardValues.Queen);
             } else {
-                return Ansagen.ansagen20;
+                return {
+                    ansagen: Ansagen.ansagen20,
+                    cards: [{cardColor: king.cardColor, cardValue: CardValues.King}, {
+                        cardColor: queen.cardColor,
+                        cardValue: CardValues.Queen
+                    }]
+                };
             }
         }
     }
 
     if (hasKingAndQueenOfAtout && !actGame.covered || hasKingAndQueenOfAtout && (actGame.availableCards.length > 1)) {
-        return Ansagen.ansagen40;
+        return {
+            ansagen: Ansagen.ansagen40,
+            cards: [{cardColor: atout.cardColor, cardValue: CardValues.King}, {
+                cardColor: atout.cardColor,
+                cardValue: CardValues.Queen
+            }]
+        };
     } else if (hasKingAndQueenOfAtout && actGame.covered || hasKingAndQueenOfAtout && !(actGame.availableCards.length > 1)) {
-        return Ansagen.ansagen20;
+        if (queen != undefined && king != undefined) {
+            return {
+                ansagen: Ansagen.ansagen20,
+                cards: [{cardColor: king.cardColor, cardValue: CardValues.King}, {
+                    cardColor: queen.cardColor,
+                    cardValue: CardValues.Queen
+                }]
+            };
+        } else {
+            console.log("alarm!?!?!?!?")
+            return {ansagen: Ansagen.normal, cards: []};
+        }
     } else {
-        return Ansagen.normal;
+        return {ansagen: Ansagen.normal, cards: []};
     }
 }
 
@@ -136,15 +170,18 @@ function sendAnsage(actGame: Game, playerEnum: PlayerEnum) {
 
     let ansage = getAnsage(player.handCards, actGame!.atout!, actGame);
 
-    if (ansage == Ansagen.ansagen20) {
+    if (ansage.ansagen == Ansagen.ansagen20) {
         player.say20 = true;
+        player.saidCards = ansage.cards;
         player.socketConnection!.emit("say", 20);
-    } else if (ansage == Ansagen.ansagen40) {
+    } else if (ansage.ansagen == Ansagen.ansagen40) {
         player.say40 = true;
+        player.saidCards = ansage.cards;
         player.socketConnection!.emit("say", 40);
     } else {
         player.say20 = false;
         player.say40 = false;
+        player.saidCards = [];
         player.socketConnection!.emit("clearSay");
     }
 }
@@ -187,15 +224,51 @@ function gameEnd(actGame: Game, winner: PlayerEnum) {
     }
 }
 
-function checkIfPlayerCanChangeAtout(cards: Card[], atout: Card): boolean {
+function checkIfPlayerCanChangeAtout(cards: Card[], atout: Card, actGame: Game): boolean {
     let changeCard = {cardValue: CardValues.Jack, cardColor: atout.cardColor} as Card;
 
     for (let card of cards) {
         if (card.cardValue == changeCard.cardValue && card.cardColor == changeCard.cardColor) {
-            return true;
+            return actGame!.availableCards.length > 1;
         }
     }
     return false;
+}
+
+function checkIfCardsContainsColor(cards: Card[], color: CardColors): boolean {
+    for (let card of cards) {
+        if (card.cardColor == color) return true;
+    }
+    return false;
+}
+
+function setActiveCard(actGame: Game, playerEnum: PlayerEnum, card: Card, wss: Socket) {
+    let player = playerEnum == PlayerEnum.player1 ? actGame!.player1 : actGame!.player2!;
+    let opponent = playerEnum != PlayerEnum.player1 ? actGame!.player1 : actGame!.player2!;
+
+    console.log("l1")
+
+    player.activeCard = card;
+
+    player.socketConnection!.emit("setCardSuccess", card);
+    opponent.socketConnection!.emit("setCardSuccess", card);
+
+    console.log("l2")
+
+    player.handCards.splice(getIndexOfCard(player.handCards, card), 1);
+
+    playerEnum == PlayerEnum.player1 ? actGame!.isPlayer1OnMove = false : actGame!.isPlayer1OnMove = true;
+
+    actGame!.onePlayFinished++;
+
+    console.log("l3")
+
+    actGame!.usedCards.push(card)
+
+    player.say20 = false;
+    player.say40 = false;
+    wss.emit("clearSay");
+    console.log("l4")
 }
 
 socketIO.on('connection', (ws) => {
@@ -221,6 +294,8 @@ socketIO.on('connection', (ws) => {
                     say20: false,
                     say40: false,
                     wonCount: 0,
+                    saidCards: [],
+                    said: false
                 },
                 player2: {
                     name: undefined,
@@ -232,6 +307,8 @@ socketIO.on('connection', (ws) => {
                     say20: false,
                     say40: false,
                     wonCount: 0,
+                    saidCards: [],
+                    said: false
                 },
                 isPlayer1OnMove: true,
                 state: State.joining,
@@ -248,13 +325,13 @@ socketIO.on('connection', (ws) => {
             //rejoin
             if (actGame!.player1.name == newGameData.playerName && actGame!.state == State.gameRunning && !actGame!.player1.isOnline) {
                 rejoin(actGame!, ws, PlayerEnum.player1);
-                if (checkIfPlayerCanChangeAtout(actGame!.player1.handCards, actGame!.atout!)) ws.emit("swapAtoutAble");
+                if (checkIfPlayerCanChangeAtout(actGame!.player1.handCards, actGame!.atout!, actGame!)) ws.emit("swapAtoutAble");
 
                 ws.emit("joinSucceed");
                 return;
             } else if (actGame!.player2!.name == newGameData.playerName && actGame!.state == State.gameRunning && !actGame!.player2!.isOnline) {
                 rejoin(actGame!, ws, PlayerEnum.player2);
-                if (checkIfPlayerCanChangeAtout(actGame!.player2!.handCards, actGame!.atout!)) ws.emit("swapAtoutAble");
+                if (checkIfPlayerCanChangeAtout(actGame!.player2!.handCards, actGame!.atout!, actGame!)) ws.emit("swapAtoutAble");
 
                 ws.emit("joinSucceed");
                 return;
@@ -303,8 +380,8 @@ socketIO.on('connection', (ws) => {
             //update game settings that game can start
             actGame!.state = State.gameRunning;
 
-            if (checkIfPlayerCanChangeAtout(actGame!.player1.handCards, actGame!.atout!)) actGame!.player1.socketConnection!.emit("swapAtoutAble");
-            if (checkIfPlayerCanChangeAtout(actGame!.player2!.handCards, actGame!.atout!)) actGame!.player2!.socketConnection!.emit("swapAtoutAble");
+            if (checkIfPlayerCanChangeAtout(actGame!.player1.handCards, actGame!.atout!, actGame!)) actGame!.player1.socketConnection!.emit("swapAtoutAble");
+            if (checkIfPlayerCanChangeAtout(actGame!.player2!.handCards, actGame!.atout!, actGame!)) actGame!.player2!.socketConnection!.emit("swapAtoutAble");
 
             //activate ansage button for player
             sendAnsage(actGame!, PlayerEnum.player1);
@@ -334,47 +411,135 @@ socketIO.on('connection', (ws) => {
 
         if (actGame!.isPlayer1OnMove && setCardData.playerName === actGame!.player1.name) {
             if (includesSpecificCard(actGame!.player1!.handCards, setCardData.card)) {
-                if (actGame!.player2!.activeCard == undefined) {
-                    actGame!.hasPlayer1StartedPlayRound = true;
+                if (actGame!.player1.saidCards.length != 0 && actGame!.player1.said) {
+                    if (setCardData.card.cardValue != CardValues.Queen && setCardData.card.cardValue != CardValues.King) {
+                        ws.emit("alert", "Du muss König oder Dame spielen!");
+                        return;
+                    } else {
+                        for (let saidCard of actGame!.player1.saidCards) {
+                            if (saidCard.cardColor == setCardData.card.cardColor) {
+                                setActiveCard(actGame!, PlayerEnum.player1, setCardData.card, ws);
+                                actGame!.hasPlayer1StartedPlayRound = true;
+                                actGame!.player1.saidCards = [];
+                                actGame!.player1.said = false;
+                                return;
+                            }
+                        }
+                        ws.emit("alert", "Du muss König oder Dame spielen!");
+                        return;
+                    }
+                } else {
+                    if (actGame!.player2!.activeCard == undefined) {
+                        console.log("player1" + " " + 0)
+                        setActiveCard(actGame!, PlayerEnum.player1, setCardData.card, ws);
+                        actGame!.hasPlayer1StartedPlayRound = true;
+                    } else {
+                        console.log("player1" + " " + 1)
+                        if (actGame!.availableCards.length < 1 || actGame!.covered) {
+                            console.log("player1" + " " + 2)
+                            let player2ActiveCardColor = actGame!.player2!.activeCard.cardColor;
+
+                            let bool = checkIfCardsContainsColor(actGame!.player1.handCards, player2ActiveCardColor);
+
+                            if (bool) {
+                                console.log("player1" + " " + 3)
+                                if (setCardData.card.cardColor != player2ActiveCardColor) {
+                                    console.log("player1" + " " + 4)
+                                    ws.emit("alert", "Du musst Farbe bekennen!");
+                                    return;
+                                } else {
+                                    console.log("player1" + " " + 5)
+                                    setActiveCard(actGame!, PlayerEnum.player1, setCardData.card, ws);
+                                }
+                            } else {
+                                let atoutBool = checkIfCardsContainsColor(actGame!.player1.handCards, actGame!.atout!.cardColor);
+
+                                if (atoutBool) {
+                                    if (setCardData.card.cardColor != actGame!.atout!.cardColor) {
+                                        console.log("player1" + " " + 4)
+                                        ws.emit("alert", "Du musst Atout legen!");
+                                        return;
+                                    } else {
+                                        console.log("player1" + " " + 5)
+                                        setActiveCard(actGame!, PlayerEnum.player1, setCardData.card, ws);
+                                    }
+                                } else {
+                                    setActiveCard(actGame!, PlayerEnum.player1, setCardData.card, ws);
+                                }
+                                console.log("player1" + " " + 6)
+                            }
+                        } else {
+                            console.log("player1" + " " + 7)
+                            setActiveCard(actGame!, PlayerEnum.player1, setCardData.card, ws);
+                        }
+                    }
                 }
-
-                actGame!.player1.activeCard = setCardData.card;
-
-                actGame!.player1!.socketConnection!.emit("setCardSuccess", setCardData.card);
-                actGame!.player2!.socketConnection!.emit("setCardSuccess", setCardData.card);
-
-                actGame!.player1.handCards.splice(getIndexOfCard(actGame!.player1.handCards, setCardData.card), 1);
-
-                actGame!.isPlayer1OnMove = false;
-                actGame!.onePlayFinished++;
-
-                actGame!.usedCards.push(setCardData.card)
-
-                actGame!.player1.say20 = false;
-                actGame!.player1.say40 = false;
-                ws.emit("clearSay");
             }
         } else if (!actGame!.isPlayer1OnMove && setCardData.playerName === actGame!.player2!.name) {
             if (includesSpecificCard(actGame!.player2!.handCards, setCardData.card)) {
-                if (actGame!.player1.activeCard == undefined) {
-                    actGame!.hasPlayer1StartedPlayRound = false;
+                if (actGame!.player2!.saidCards.length != 0 && actGame!.player2!.said) {
+                    if (setCardData.card.cardValue != CardValues.Queen && setCardData.card.cardValue != CardValues.King) {
+                        ws.emit("alert", "Du muss König oder Dame spielen!");
+                        return;
+                    } else {
+                        for (let saidCard of actGame!.player2!.saidCards) {
+                            if (saidCard.cardColor == setCardData.card.cardColor) {
+                                setActiveCard(actGame!, PlayerEnum.player2, setCardData.card, ws);
+                                actGame!.player2!.saidCards = [];
+                                actGame!.player2!.said = false;
+                                actGame!.hasPlayer1StartedPlayRound = false;
+                                return;
+                            }
+                        }
+                        ws.emit("alert", "Du muss König oder Dame spielen!");
+                        return;
+                    }
+                } else {
+                    if (actGame!.player1.activeCard == undefined) {
+                        console.log("player2" + " " + 0)
+                        setActiveCard(actGame!, PlayerEnum.player2, setCardData.card, ws);
+                        actGame!.hasPlayer1StartedPlayRound = false;
+                    } else {
+                        console.log("player2" + " " + 1)
+                        if (actGame!.availableCards.length < 1 || actGame!.covered) {
+                            console.log("player2" + " " + 2)
+                            let player1ActiveCardColor = actGame!.player1.activeCard.cardColor;
+
+                            let bool = checkIfCardsContainsColor(actGame!.player2!.handCards, player1ActiveCardColor);
+
+                            if (bool) {
+                                console.log("player2" + " " + 3)
+                                if (setCardData.card.cardColor != player1ActiveCardColor) {
+                                    console.log("player2" + " " + 4)
+                                    ws.emit("alert", "Du musst Farbe bekennen!");
+                                    return;
+                                } else {
+                                    console.log("player2" + " " + 5)
+                                    setActiveCard(actGame!, PlayerEnum.player2, setCardData.card, ws);
+                                }
+                            } else {
+                                let atoutBool = checkIfCardsContainsColor(actGame!.player2!.handCards, actGame!.atout!.cardColor);
+
+                                if (atoutBool) {
+                                    if (setCardData.card.cardColor != actGame!.atout!.cardColor) {
+                                        console.log("player2" + " " + 4)
+                                        ws.emit("alert", "Du musst Atout legen!");
+                                        return;
+                                    } else {
+                                        console.log("player2" + " " + 5)
+                                        setActiveCard(actGame!, PlayerEnum.player2, setCardData.card, ws);
+                                    }
+                                } else {
+                                    setActiveCard(actGame!, PlayerEnum.player2, setCardData.card, ws);
+                                }
+                                console.log("player2" + " " + 6)
+                            }
+                        } else {
+                            console.log("player2" + " " + 7)
+                            setActiveCard(actGame!, PlayerEnum.player2, setCardData.card, ws);
+                        }
+                    }
                 }
-
-                actGame!.player2!.activeCard = setCardData.card;
-
-                actGame!.player1!.socketConnection!.emit("setCardSuccess", setCardData.card);
-                actGame!.player2!.socketConnection!.emit("setCardSuccess", setCardData.card);
-
-                actGame!.player2!.handCards.splice(getIndexOfCard(actGame!.player2!.handCards, setCardData.card), 1);
-
-                actGame!.isPlayer1OnMove = true;
-                actGame!.onePlayFinished++;
-
-                actGame!.usedCards.push(setCardData.card)
-
-                actGame!.player2!.say20 = false;
-                actGame!.player2!.say40 = false;
-                ws.emit("clearSay");
             }
         } else {
             ws.emit("alert", "Du bist nicht am Zug!");
@@ -382,6 +547,8 @@ socketIO.on('connection', (ws) => {
 
         if (actGame!.onePlayFinished == 2) {
             let winner = getWinner3(actGame!.player1.activeCard!, actGame!.player2!.activeCard!, actGame!.atout!.cardColor, actGame!.hasPlayer1StartedPlayRound!);
+
+            console.log(winner)
 
             actGame!.hasPlayer1StartedPlayRound = undefined;
 
@@ -437,8 +604,8 @@ socketIO.on('connection', (ws) => {
                 actGame!.player1.socketConnection!.emit("newCard", player1Card);
                 actGame!.player2!.socketConnection!.emit("newCard", player2Card);
 
-                if (checkIfPlayerCanChangeAtout(actGame!.player1.handCards, actGame!.atout!)) actGame!.player1.socketConnection!.emit("swapAtoutAble");
-                if (checkIfPlayerCanChangeAtout(actGame!.player2!.handCards, actGame!.atout!)) actGame!.player2!.socketConnection!.emit("swapAtoutAble");
+                if (checkIfPlayerCanChangeAtout(actGame!.player1.handCards, actGame!.atout!, actGame!)) actGame!.player1.socketConnection!.emit("swapAtoutAble");
+                if (checkIfPlayerCanChangeAtout(actGame!.player2!.handCards, actGame!.atout!, actGame!)) actGame!.player2!.socketConnection!.emit("swapAtoutAble");
             }
 
             sendAnsage(actGame!, PlayerEnum.player1);
@@ -447,6 +614,8 @@ socketIO.on('connection', (ws) => {
             actGame!.onePlayFinished = 0;
 
             gameEnd(actGame!, winner);
+
+            winner == PlayerEnum.player1 ? actGame!.player1.socketConnection!.emit("alert", "Du bist dran!") : actGame!.player2!.socketConnection!.emit("alert", "Du bist dran!");
         }
     })
 
@@ -494,6 +663,7 @@ socketIO.on('connection', (ws) => {
             player.socketConnection!.emit("setCardCount", player.cardCount);
             player.say20 = false;
             player.say40 = false;
+            player.said = true;
             ws.emit("clearSay");
             opponent.socketConnection!.emit("said", 20);
             gameEndPoints(actGame!);
@@ -502,6 +672,7 @@ socketIO.on('connection', (ws) => {
             player.socketConnection!.emit("setCardCount", player.cardCount);
             player.say20 = false;
             player.say40 = false;
+            player.said = true;
             ws.emit("clearSay");
             opponent.socketConnection!.emit("said", 40);
             gameEndPoints(actGame!);
@@ -512,8 +683,10 @@ socketIO.on('connection', (ws) => {
         let actGame = game.get(newGameData.serverToConnect);
         if (actGame!.covered) return;
 
-        if (actGame!.player1.name == newGameData.playerName && actGame!.isPlayer1OnMove || actGame!.player2!.name == newGameData.playerName && !actGame!.isPlayer1OnMove) {
+        if (actGame!.player1.name == newGameData.playerName && actGame!.hasPlayer1StartedPlayRound || actGame!.player2!.name == newGameData.playerName && !actGame!.hasPlayer1StartedPlayRound) {
             actGame!.covered = true;
+            actGame!.player1.socketConnection!.emit("alert", "Es wurde zugedeckt!");
+            actGame!.player2!.socketConnection!.emit("alert", "Es wurde zugedeckt!");
         }
     })
 
@@ -522,7 +695,12 @@ socketIO.on('connection', (ws) => {
         let atout = actGame!.atout!;
         let changeCard = {cardValue: CardValues.Jack, cardColor: atout.cardColor} as Card;
 
-        if (actGame!.player1.name == newGameData.playerName && actGame!.isPlayer1OnMove) {
+        if(actGame!.covered) {
+            ws.emit("alert", "Du kannst nicht austuaschen wenn bereits zugedeckt wurde!")
+            return;
+        }
+
+        if (actGame!.player1.name == newGameData.playerName && actGame!.isPlayer1OnMove && actGame!.hasPlayer1StartedPlayRound == undefined) {
             if (includesSpecificCard(actGame!.player1!.handCards, changeCard)) {
                 actGame!.player1.handCards.push(atout);
                 actGame!.player1.handCards.splice(getIndexOfCard(actGame!.player1.handCards, changeCard), 1);
@@ -535,7 +713,7 @@ socketIO.on('connection', (ws) => {
 
                 sendAnsage(actGame!, PlayerEnum.player1);
             }
-        } else if (actGame!.player2!.name == newGameData.playerName && !actGame!.isPlayer1OnMove) {
+        } else if (actGame!.player2!.name == newGameData.playerName && !actGame!.isPlayer1OnMove && actGame!.hasPlayer1StartedPlayRound == undefined) {
             if (includesSpecificCard(actGame!.player2!.handCards, changeCard)) {
                 actGame!.player2!.handCards.push(atout);
                 actGame!.player2!.handCards.splice(getIndexOfCard(actGame!.player2!.handCards, changeCard), 1);
@@ -556,5 +734,5 @@ socketIO.on('connection', (ws) => {
 
 
 server.listen(port, () => {
-    console.log(`server started on port ${port}`);
+    console.log(`schnapsen backend started on port ${port}`);
 });

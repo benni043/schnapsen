@@ -41,7 +41,9 @@ export class SettingsService {
     })
 
     this.socket.on("alert", (message: string) => {
-      alert(message)
+      setTimeout(() => {
+        alert(message)
+      }, 10);
     })
 
     this.socket.on("gameEndInformation", (winner: string) => {
@@ -75,7 +77,9 @@ export class SettingsService {
     })
 
     this.socket.on("getCover", () => {
-      this.covered = true;
+      setTimeout(() => {
+        this.covered = true;
+      }, 10);
     })
 
     this.socket.on("opponent", (opponent: string) => {

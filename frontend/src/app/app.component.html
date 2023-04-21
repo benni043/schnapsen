@@ -12,7 +12,7 @@
                       [valueC]="service.currCard.cardValue"></app-new-card>
       </div>
 
-      <app-new-card (click)="service.cover()" [class.coverd]="service.covered" id="atout" *ngIf="service.atout != undefined" [colorC]="service.atout.cardColor"
+      <app-new-card id="atout" *ngIf="service.atout != undefined" [colorC]="service.atout.cardColor"
                     [valueC]="service.atout.cardValue"></app-new-card>
     </div>
 
@@ -23,9 +23,10 @@
       </div>
     </div>
 
-    <button *ngIf="service.say20" (click)="service.send20()">say20</button>
-    <button *ngIf="service.say40" (click)="service.send40()">say40</button>
-    <button *ngIf="service.changeAtout" (click)="service.austauschen()">swap atout</button>
+    <button [disabled]="!service.say20" (click)="service.send20()">20 ansagen!</button>
+    <button [disabled]="!service.say40" (click)="service.send40()">40 ansagen!</button>
+    <button [disabled]="!service.changeAtout" (click)="service.austauschen()">Atout austauschen!</button>
+    <button [disabled]="service.covered" (click)="service.cover()">Zudecken</button>
     <h2>CardCount: {{service.cardCount}}</h2>
   </div>
   <app-end-screen *ngIf="service.end"></app-end-screen>
