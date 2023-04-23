@@ -4,6 +4,7 @@
 
   <div id="game" *ngIf="service.started">
     <h1>Dein Gegner: {{service.opponent}}</h1>
+    <h1 *ngIf="service.onMove" style="color: red">Du bist dran!</h1>
 
     <div id="middle">
       <div>
@@ -23,10 +24,10 @@
       </div>
     </div>
 
-    <button [disabled]="!service.say20" (click)="service.send20()">20 ansagen!</button>
-    <button [disabled]="!service.say40" (click)="service.send40()">40 ansagen!</button>
-    <button [disabled]="!service.changeAtout" (click)="service.austauschen()">Atout austauschen!</button>
-    <button [disabled]="service.covered" (click)="service.cover()">Zudecken</button>
+    <button [disabled]="!service.onMove || !service.say20" (click)="service.send20()">20 ansagen!</button>
+    <button [disabled]="!service.onMove || !service.say40" (click)="service.send40()">40 ansagen!</button>
+    <button [disabled]="!service.onMove || !service.changeAtout" (click)="service.austauschen()">Atout austauschen!</button>
+    <button [disabled]="service.covered || !service.onMove" (click)="service.cover()">Zudecken</button>
     <h2>CardCount: {{service.cardCount}}</h2>
   </div>
   <app-end-screen *ngIf="service.end"></app-end-screen>

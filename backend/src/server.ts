@@ -246,14 +246,10 @@ function setActiveCard(actGame: Game, playerEnum: PlayerEnum, card: Card, wss: S
     let player = playerEnum == PlayerEnum.player1 ? actGame!.player1 : actGame!.player2!;
     let opponent = playerEnum != PlayerEnum.player1 ? actGame!.player1 : actGame!.player2!;
 
-    console.log("l1")
-
     player.activeCard = card;
 
     player.socketConnection!.emit("setCardSuccess", card);
     opponent.socketConnection!.emit("setCardSuccess", card);
-
-    console.log("l2")
 
     player.handCards.splice(getIndexOfCard(player.handCards, card), 1);
 
@@ -261,14 +257,11 @@ function setActiveCard(actGame: Game, playerEnum: PlayerEnum, card: Card, wss: S
 
     actGame!.onePlayFinished++;
 
-    console.log("l3")
-
     actGame!.usedCards.push(card)
 
     player.say20 = false;
     player.say40 = false;
-    wss.emit("clearSay");
-    console.log("l4")
+    wss.emit("clearSay")
 }
 
 socketIO.on('connection', (ws) => {
@@ -310,17 +303,18 @@ socketIO.on('connection', (ws) => {
                     saidCards: [],
                     said: false
                 },
-                isPlayer1OnMove: true,
-                state: State.joining,
-                gameEnd: false,
-                usedCards: [],
-                availableCards: getAllCardCombinations(),
-                atout: undefined,
-                onePlayFinished: 0,
-                playerLeftCount: 0,
-                hasPlayer1StartedPlayRound: undefined,
-                covered: false,
-            })
+                    isPlayer1OnMove: true,
+                    state: State.joining,
+                    gameEnd: false,
+                    usedCards: [],
+                    availableCards: getAllCardCombinations(),
+                    atout: undefined,
+                    onePlayFinished: 0,
+                    playerLeftCount: 0,
+                    hasPlayer1StartedPlayRound: undefined,
+                    covered: false,
+                }
+            )
         } else {
             //rejoin
             if (actGame!.player1.name == newGameData.playerName && actGame!.state == State.gameRunning && !actGame!.player1.isOnline) {
@@ -398,6 +392,8 @@ socketIO.on('connection', (ws) => {
             //start game
             actGame!.player1!.socketConnection!.emit("started");
             actGame!.player2!.socketConnection!.emit("started");
+
+            actGame!.player1!.socketConnection!.emit("move");
         }
     })
 
@@ -615,7 +611,11 @@ socketIO.on('connection', (ws) => {
 
             gameEnd(actGame!, winner);
 
-            winner == PlayerEnum.player1 ? actGame!.player1.socketConnection!.emit("alert", "Du bist dran!") : actGame!.player2!.socketConnection!.emit("alert", "Du bist dran!");
+            if (winner == PlayerEnum.player1) {
+                actGame!.player1.socketConnection!.emit("move");
+            } else {
+                actGame!.player2!.socketConnection!.emit("move");
+            }
         }
     })
 
@@ -681,12 +681,43 @@ socketIO.on('connection', (ws) => {
 
     ws.on("sendCover", (newGameData: NewGameData) => {
         let actGame = game.get(newGameData.serverToConnect);
-        if (actGame!.covered) return;
+        console.log(100)
 
-        if (actGame!.player1.name == newGameData.playerName && actGame!.hasPlayer1StartedPlayRound || actGame!.player2!.name == newGameData.playerName && !actGame!.hasPlayer1StartedPlayRound) {
+        if (actGame!.gameEnd) {
+            ws.emit("alert", "Das Spiel ist bereits beendet!");
+            return;
+        }
+
+        if (actGame!.covered) {
+            ws.emit("alert", "Es wurde bereits zugedeckt!")
+            return;
+        }
+
+        if (((actGame!.player1.name == newGameData.playerName) && actGame!.isPlayer1OnMove) || (actGame!.player2!.name == newGameData.playerName) && !actGame!.isPlayer1OnMove) {
+            console.log(1)
             actGame!.covered = true;
             actGame!.player1.socketConnection!.emit("alert", "Es wurde zugedeckt!");
             actGame!.player2!.socketConnection!.emit("alert", "Es wurde zugedeckt!");
+            actGame!.player1.socketConnection!.emit("getCover");
+            actGame!.player2!.socketConnection!.emit("getCover");
+
+            if (actGame!.player1.say40) {
+                actGame!.player1.say40 = false;
+                actGame!.player1.say20 = true;
+                actGame!.player1.socketConnection!.emit("clearSay");
+                actGame!.player1.socketConnection!.emit("say", 20);
+                return;
+            }
+            if (actGame!.player2!.say40) {
+                actGame!.player2!.say40 = false;
+                actGame!.player2!.say20 = true;
+                actGame!.player2!.socketConnection!.emit("clearSay");
+                actGame!.player2!.socketConnection!.emit("say", 20);
+                return;
+            }
+        } else {
+            console.log(0)
+            ws.emit("alert", "Du bist nicht dran!");
         }
     })
 
@@ -730,6 +761,18 @@ socketIO.on('connection', (ws) => {
             ws.emit("alert", "Du bist nicht am Zug!");
         }
     })
+
+    // ws.on("moveEnd", (newGameData: NewGameData) => {
+    //     let actGame = game.get(newGameData.serverToConnect)!;
+    //
+    //     if(actGame.player1.name == newGameData.playerName) {
+    //         console.log("move1")
+    //         actGame.player2!.socketConnection!.emit("move");
+    //     } else if (actGame.player2!.name == newGameData.playerName) {
+    //         console.log("move2")
+    //         actGame.player1!.socketConnection!.emit("move");
+    //     }
+    // });
 });
 
 

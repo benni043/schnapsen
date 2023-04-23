@@ -27,13 +27,19 @@ export class SettingsService {
     })
 
     this.socket.on("setCardSuccess", (card: Card) => {
-      this.currCard = card;
+      this.currCard = undefined;
 
-      for (let i = 0; i < this.cards.length; i++) {
-        if (this.cards[i].cardValue == card.cardValue && this.cards[i].cardColor == card.cardColor) {
-          this.cards.splice(i, 1);
+      setTimeout(() => {
+        this.currCard = card;
+
+        for (let i = 0; i < this.cards.length; i++) {
+          if (this.cards[i].cardValue == card.cardValue && this.cards[i].cardColor == card.cardColor) {
+            this.cards.splice(i, 1);
+          }
         }
-      }
+
+        this.onMove = false;
+      }, 10)
     })
 
     this.socket.on("setCardCount", (cardCount: number) => {
@@ -49,6 +55,7 @@ export class SettingsService {
     this.socket.on("gameEndInformation", (winner: string) => {
       this.end = true;
       this.winner = winner;
+      this.onMove = false;
     })
 
     this.socket.on("joinSucceed", () => {
@@ -60,7 +67,10 @@ export class SettingsService {
     })
 
     this.socket.on("clearCurrCard", () => {
-      this.currCard = undefined;
+      setTimeout(() => {
+        console.log(100)
+        this.currCard = undefined;
+      }, 3000)
     })
 
     this.socket.on("say", (value: number) => {
@@ -77,9 +87,7 @@ export class SettingsService {
     })
 
     this.socket.on("getCover", () => {
-      setTimeout(() => {
         this.covered = true;
-      }, 10);
     })
 
     this.socket.on("opponent", (opponent: string) => {
@@ -131,11 +139,13 @@ export class SettingsService {
   say20: boolean = false;
   say40: boolean = false;
 
-  covered: boolean = false;
+  covered: boolean | undefined = false;
 
   opponent: string = "";
 
   changeAtout: boolean = false;
+
+  onMove: boolean | undefined = undefined;
 
   join() {
     this.socket!.emit("newGame", {
