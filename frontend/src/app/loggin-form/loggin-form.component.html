@@ -1,13 +1,17 @@
 <div class="form-wrapper">
   <form>
     <div class="form-group">
-      <label for="name">Username</label>
+      <label for="userName">Username</label>
       <input type="text" name="userName" id="userName" [(ngModel)]="name" required>
     </div>
 
     <div class="form-group">
-      <label for="server">server</label>
-      <input type="text" name="server" id="server" [(ngModel)]="name" required>
+      <label for="server">Server</label>
+      <select [(ngModel)]="server" name="server" id="server">
+        <option [value]="ServerID.server1">{{ServerID.server1}}</option>
+        <option [value]="ServerID.server2">{{ServerID.server2}}</option>
+        <option [value]="ServerID.server3">{{ServerID.server3}}</option>
+      </select>
     </div>
 
     <button class="login-button" (click)="join()">Join</button>
